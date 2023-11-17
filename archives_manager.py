@@ -256,7 +256,7 @@ def get_opponent_name(archived_game, player_name):
 
 def get_accuracy(archived_game, player_name):
     """
-    Get the chess.com rated accuracy for this game. ValueError if accuracies are not available for this game.
+    Get the chess.com rated accuracy for this game. Returns 'None' if accuracies are not available for this game.
 
     Parameters:
     - archived_game (dict): The archived game dictionary.
@@ -267,13 +267,14 @@ def get_accuracy(archived_game, player_name):
         'Player': The perspective player's rated accuracy.
         'Opponent': The opponent rated accuracy.
     }
+    or None if accuracies not available for this game.
     """
 
     white_player = archived_game['white']['username']
     black_player = archived_game['black']['username']
 
     if 'accuracies' not in archived_game:
-        raise ValueError('accuracies not in archived game')
+        return None
 
     white_acc = archived_game['accuracies']['white']
     black_acc = archived_game['accuracies']['black']
