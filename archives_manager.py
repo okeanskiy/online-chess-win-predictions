@@ -368,9 +368,6 @@ def get_won(archived_game, player_name):
 
     raise ValueError(f"Player name '{player_name}' does not match either player in the game.")
 
-def _builtin_archive_filter():
-    print("hi")
-
 def build_archive_filter(rated=None, time_class=None, has_accuracies=None, exclude_draws=None):
     def filter_func(archived_game):
         if has_accuracies is not None:
@@ -382,13 +379,19 @@ def build_archive_filter(rated=None, time_class=None, has_accuracies=None, exclu
         if rated is not None and archived_game.get('rated') != rated:
             return False
 
-        if time_class is not None and archived_game.get('time_class') != time_class:
-            return False
+        if time_class is not None:
+            game_time_class = archived_game.get('time_class')
+            if isinstance(time_class, list):
+                if game_time_class not in time_class:
+                    return False
+            else:
+                if game_time_class != time_class:
+                    return False
 
         if exclude_draws is not None:
             white_result = archived_game.get('white', {}).get('result')
             black_result = archived_game.get('black', {}).get('result')
-            if white_result == "draw" and black_result == "draw" and exclude_draws:
+            if white_result != "win" and black_result != "win":
                 return False
 
         return True
