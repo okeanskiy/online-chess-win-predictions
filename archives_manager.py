@@ -26,7 +26,7 @@ session.headers["User-Agent"] = f"username: {user_agent['username']}, email: {us
 
 # requests retrieval error
 class ArchiveRetrievalError(Exception):
-    """Exception raised when failing to retrieve archive data."""
+    """Exception raised when failing to retrieve archive data from api.chess.com"""
     pass
 
 
@@ -63,19 +63,6 @@ def _readMonthlyArchivesList(player_name):
     return list_data
 
 def _getMonthlyArchivesList(player_name):
-    """
-    Retrieve the monthly archives list for a given player.
-
-    If the archives list already exists, it reads from the existing file.
-    Otherwise, it requests the list from a chess.com api, saves it as
-    lowercase player_name.json in json/archive_lists, and then returns the data.
-
-    Parameters:
-    - player_name (str): The name of the player to retrieve the archives for.
-
-    Returns:
-    - list: The list of URLs to per-month archived games.
-    """
     if _monthlyArchivesListExists(player_name):
         return _readMonthlyArchivesList(player_name)
     else:
@@ -131,20 +118,6 @@ def _extract_url_data(month_url):
         return None
 
 def _getArchivedGames(month_url):
-    """
-    Retrieve the archived games associated with this player's month archive URL.
-
-    If the archived games file already exists, it reads from the existing file.
-    Otherwise, it requests the archive from a chess.com api, saves it to
-    json/archives/downloaded/{player_name}/{year}/{month}.json
-
-    Parameters:
-    - month_url (str): The URL for the player's month archive.
-
-    Returns:
-    - list: The list of archived games for this player during the month.
-    """
-
     url_data = _extract_url_data(month_url)
     player_name, year, month = url_data['player_name'], url_data['year'], url_data['month']
 
@@ -187,7 +160,7 @@ def _filterOutArchiveListBeforeUnixTimestamp(monthly_archived_list, unix_timesta
 
     return filtered_archive_list
 
-def getMostRecentGames(player_name, num_games=100, filter_func=None, unix_timestamp=None):
+def get_most_recent_games(player_name, num_games=100, filter_func=None):
     """
     Retrieve a list of archived games most recent to a player.
 
@@ -195,15 +168,11 @@ def getMostRecentGames(player_name, num_games=100, filter_func=None, unix_timest
     - player_name (str): The player's username on chess.com
     - num_games (int): The amount of games to include. List will be this long or include all games if not enough. Default 100.
     - filter_func (function): A function that takes a game as input and returns True if the game should be included. Default None.
-    - unix_timestamp (int): Archived games after this unix timestamp are ignored. Default None.
 
     Returns:
     - list: The list of most recent archived games.
     """
     monthly_archived_list = _getMonthlyArchivesList(player_name)
-
-    if unix_timestamp:
-        monthly_archived_list = _filterOutArchiveListAfterUnixTimestamp(monthly_archived_list, unix_timestamp)
 
     recent_archived_games = []
 
@@ -213,9 +182,6 @@ def getMostRecentGames(player_name, num_games=100, filter_func=None, unix_timest
 
         for j in range(len(archived_games)):
             archived_game = archived_games[-(j+1)]
-
-            if unix_timestamp and archived_game['end_time'] > unix_timestamp:
-                continue
 
             if filter_func is None or filter_func(archived_game):
                 recent_archived_games.append(archived_game)
@@ -228,18 +194,21 @@ def getMostRecentGames(player_name, num_games=100, filter_func=None, unix_timest
     
     return recent_archived_games
 
-def getGamesBetweenTimestamps(player_name, start_unix, end_unix, filter_func=None):
+# legacy name
+getMostRecentGames = get_most_recent_games
+
+def get_games_between_timestamps(player_name, start_unix, end_unix, filter_func=None):
     """
-    Retrieve a list of all archived games between two unix timestamps.
+    Retrieve a list of all of a player's archived games between two unix timestamps.
 
     Parameters:
     - player_name (str): The player's username on chess.com
     - start_unix (int): The beginning timestamp, all games will be after this.
     - end_unix (int): The end timestamp, all games will be before this.
-    - filter_func (function): A function that takes a game as input and returns True if the game should be included. Default None.
+    - filter_func (function): A function that takes an archived game as input and returns True if the game should be included. Default None.
 
     Returns:
-    - list: The list of most recent archived games.
+    - list: The list of archived games between the two unix timestamps.
     """
     monthly_archived_list = _getMonthlyArchivesList(player_name)
     monthly_archived_list = _filterOutArchiveListAfterUnixTimestamp(monthly_archived_list, end_unix)
@@ -262,3 +231,166 @@ def getGamesBetweenTimestamps(player_name, start_unix, end_unix, filter_func=Non
                 recent_archived_games.append(archived_game)
     
     return recent_archived_games
+
+# legacy name
+getGamesBetweenTimestamps = get_games_between_timestamps
+
+def get_opponent_name(archived_game, player_name):
+    """
+    Get the opponent's chess.com username from a game.
+
+    Parameters:
+    - archived_game (dict): The archived game dictionary.
+    - player_name (str): The perspective player.
+
+    Returns:
+    - str: Username string of the opponent name.
+    """
+
+    if archived_game['white']['username'] == player_name:
+        return archived_game['black']['username']
+    elif archived_game['black']['username'] == player_name:
+        return archived_game['white']['username']
+    
+    raise ValueError(f'Player name {player_name} not found in archived game')
+
+def get_accuracy(archived_game, player_name):
+    """
+    Get the chess.com rated accuracy for this game. ValueError if accuracies are not available for this game.
+
+    Parameters:
+    - archived_game (dict): The archived game dictionary.
+    - player_name (str): The perspective player.
+
+    Returns:
+    - dict: {
+        'Player': The perspective player's rated accuracy.
+        'Opponent': The opponent rated accuracy.
+    }
+    """
+
+    white_player = archived_game['white']['username']
+    black_player = archived_game['black']['username']
+
+    if 'accuracies' not in archived_game:
+        raise ValueError('accuracies not in archived game')
+
+    white_acc = archived_game['accuracies']['white']
+    black_acc = archived_game['accuracies']['black']
+
+    player_acc = 0
+    opponent_acc = 0
+
+    if white_player == player_name:
+        player_acc = white_acc
+        opponent_acc = black_acc
+    elif black_player == player_name:
+        player_acc = black_acc
+        opponent_acc = white_acc
+    else:
+        raise ValueError(f"Player name '{player_name}' does not match either player in the game.")
+    
+    return {
+        'Player': player_acc,
+        'Opponent': opponent_acc
+    }
+
+def get_elo(archived_game, player_name):
+    """
+    Get the chess.com rated elo for this game.
+
+    Parameters:
+    - archived_game (dict): The archived game dictionary.
+    - player_name (str): The perspective player.
+
+    Returns:
+    - dict: {
+        'Player': The perspective player's rated elo.
+        'Opponent': The opponent rated elo.
+    }
+    """
+
+    white_player = archived_game['white']['username']
+    black_player = archived_game['black']['username']
+
+    white_elo = archived_game['white']['rating']
+    black_elo = archived_game['black']['rating']
+
+    player_elo = 0
+    opponent_elo = 0
+
+    if white_player == player_name:
+        player_elo = white_elo
+        opponent_elo = black_elo
+    elif black_player == player_name:
+        player_elo = black_elo
+        opponent_elo = white_elo
+    else:
+        raise ValueError(f"Player name '{player_name}' does not match either player in the game.")
+    
+    return {
+        'Player': player_elo,
+        'Opponent': opponent_elo
+    }
+
+def get_won(archived_game, player_name):
+    """
+    Get's the win result as an integer 1 for won, 0 for lost. ValueError if the game did not result in a win for either player (draw).
+
+    Parameters:
+    - archived_game (dict): The archived game dictionary.
+    - player_name (str): The perspective player.
+
+    Returns:
+    - int: 1 if won, 0 if lost
+    """
+
+    white_player = archived_game['white']['username']
+    black_player = archived_game['black']['username']
+
+    white_result = archived_game['white']['result']
+    black_result = archived_game['black']['result']
+
+    if white_player == player_name:
+        if white_result == 'win':
+            return 1
+        elif black_result == 'win':
+            return 0
+        else:
+            raise ValueError(f"Archived game did not result in a win for either player")
+    elif black_player == player_name:
+        if white_result == 'win':
+            return 0
+        elif black_result == 'win':
+            return 1
+        else:
+            raise ValueError(f"Archived game did not result in a win for either player")
+
+    raise ValueError(f"Player name '{player_name}' does not match either player in the game.")
+
+def _builtin_archive_filter():
+    print("hi")
+
+def build_archive_filter(rated=None, time_class=None, has_accuracies=None, exclude_draws=None):
+    def filter_func(archived_game):
+        if has_accuracies is not None:
+            if 'accuracies' not in archived_game and has_accuracies:
+                return False
+            elif 'accuracies' in archived_game and not has_accuracies:
+                return False
+
+        if rated is not None and archived_game.get('rated') != rated:
+            return False
+
+        if time_class is not None and archived_game.get('time_class') != time_class:
+            return False
+
+        if exclude_draws is not None:
+            white_result = archived_game.get('white', {}).get('result')
+            black_result = archived_game.get('black', {}).get('result')
+            if white_result == "draw" and black_result == "draw" and exclude_draws:
+                return False
+
+        return True
+
+    return filter_func
