@@ -369,8 +369,13 @@ def get_won(archived_game, player_name):
 
     raise ValueError(f"Player name '{player_name}' does not match either player in the game.")
 
-def build_archive_filter(rated=None, time_class=None, has_accuracies=None, exclude_draws=None):
+def build_archive_filter(rated=None, time_class=None, has_accuracies=None, exclude_draws=None, max_elo_diff=None):
     def filter_func(archived_game):
+        if max_elo_diff is not None:
+            elo_diff = archived_game['white']['rating'] - archived_game['black']['rating']
+            if abs(elo_diff) > max_elo_diff:
+                return False
+
         if has_accuracies is not None:
             if 'accuracies' not in archived_game and has_accuracies:
                 return False
