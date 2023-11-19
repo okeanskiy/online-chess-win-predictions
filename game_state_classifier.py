@@ -57,4 +57,7 @@ def predict(predictor_df):
     if knn_model == None:
         _load_model()
     
+    if isinstance(predictor_df, dict):
+        predictor_df = pd.DataFrame([predictor_df])
+
     return knn_model.predict(predictor_df)
