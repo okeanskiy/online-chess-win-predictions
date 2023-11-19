@@ -7,6 +7,19 @@ from joblib import load
 from sklearn.neighbors import KNeighborsClassifier
 import os
 import pandas as pd
+from enum import Enum
+
+class GAME_STATE(Enum):
+    OPEN = 'OPEN'
+    MID = 'MID'
+    END = 'END'
+
+    def __eq__(self, other):
+        if isinstance(other, GAME_STATE):
+            return self.value == other.value
+        elif isinstance(other, str):
+            return self.value == other
+        return False
 
 knn_model = None
 
