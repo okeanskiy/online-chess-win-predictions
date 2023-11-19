@@ -17,10 +17,10 @@ def data_entry(player_name, game_count):
         return
     
     # Filters games by those that have 'accuracies'
-    archive_filter = archives_manager.build_archive_filter(rated=None, time_class=None, has_accuracies=True, exclude_draws=None, max_elo_diff=None)
+    archive_filter = archives_manager.build_archive_filter(rated=None, has_accuracies=True, exclude_draws=None, max_elo_diff=None)
     
     # Gets the last 50 games with the filter applied
-    archived_games = archives_manager.getMostRecentGames(player_name, game_count, filter_func=archive_filter)
+    archived_games = archives_manager.get_most_recent_games(player_name, game_count, time_class='rapid', filter_func=archive_filter)
     
     # Begin data entry
     for archived_game in archived_games:
