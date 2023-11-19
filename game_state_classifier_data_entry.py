@@ -63,6 +63,3 @@ def data_entry(player_name, game_count):
             json.dump({'games': games}, file, indent=4)
 
         print("Data saved to game_state_classifier_data.json")
-
-if __name__ == "__main__":
-    main()
