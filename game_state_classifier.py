@@ -5,6 +5,7 @@ import chess
 import board_feature_extractor
 from joblib import load
 from sklearn.neighbors import KNeighborsClassifier
+from sklearn.tree import DecisionTreeClassifier
 import os
 import pandas as pd
 from enum import Enum
@@ -22,13 +23,21 @@ class GAME_STATE(Enum):
         return False
 
 knn_model = None
+bst_model = None
 
-def _load_model():
-    if not os.path.isfile('game_state_classifier.joblib'):
-        raise FileNotFoundError("The file 'game_state_classifier.joblib' is not found in the current directory. Ensure that this file exists to load the model.")
+def _load_model_knn():
+    if not os.path.isfile('game_state_classifier_knn.joblib'):
+        raise FileNotFoundError("The file 'game_state_classifier_knn.joblib' is not found in the current directory. Ensure that this file exists to load the model.")
 
     global knn_model
-    knn_model = load('game_state_classifier.joblib')
+    knn_model = load('game_state_classifier_knn.joblib')
+
+def _load_model_bst():
+    if not os.path.isfile('game_state_classifier_bst.joblib'):
+        raise FileNotFoundError("The file 'game_state_classifier_bst.joblib' is not found in the current directory. Ensure that this file exists to load the model.")
+
+    global bst_model
+    bst_model = load('game_state_classifier_bst.joblib')
 
 def extract_predictors_from_board(board):
     move_count = board.fullmove_number - 0.5 # Starts at 0.5 instead of 1
@@ -53,11 +62,20 @@ def extract_predictors_from_board(board):
         'black_passed_pawns': passed_pawns_count['black'],
     }
 
-def predict(predictor_df):
+def predict_knn(predictor_df):
     if knn_model == None:
-        _load_model()
+        _load_model_knn()
     
     if isinstance(predictor_df, dict):
         predictor_df = pd.DataFrame([predictor_df])
 
     return knn_model.predict(predictor_df)
+
+def predict_bst(predictor_df):
+    if bst_model == None:
+        _load_model_bst()
+    
+    if isinstance(predictor_df, dict):
+        predictor_df = pd.DataFrame([predictor_df])
+
+    return bst_model.predict(predictor_df)
