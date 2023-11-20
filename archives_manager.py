@@ -338,9 +338,6 @@ def get_games_between_timestamps(player_name, start_unix, end_unix, time_class='
             if not filtered:
                 num_unfiltered += 1
 
-                if verbose:
-                    print(f'num unfiltered now: {num_unfiltered}')
-
                 if max_games is not None and num_unfiltered == max_games:
                     break
     
