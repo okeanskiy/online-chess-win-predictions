@@ -68,6 +68,7 @@ def predict_knn(predictor_df):
     
     if isinstance(predictor_df, dict):
         predictor_df = pd.DataFrame([predictor_df])
+        return knn_model.predict(predictor_df)[0]
 
     return knn_model.predict(predictor_df)
 
@@ -77,5 +78,6 @@ def predict_bst(predictor_df):
     
     if isinstance(predictor_df, dict):
         predictor_df = pd.DataFrame([predictor_df])
+        return bst_model.predict(predictor_df)[0]
 
     return bst_model.predict(predictor_df)
