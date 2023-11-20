@@ -283,7 +283,7 @@ def get_most_recent_games(player_name, num_games=100, time_class='rapid', filter
     else:
         return games_list
 
-def get_games_between_timestamps(player_name, start_unix, end_unix, time_class='rapid', filter_func=None, correct_elo=True):
+def get_games_between_timestamps(player_name, start_unix, end_unix, time_class='rapid', filter_func=None, verbose=False, correct_elo=True):
     """
     Retrieve a list of all of a player's archived games between two unix timestamps.
 
@@ -298,6 +298,9 @@ def get_games_between_timestamps(player_name, start_unix, end_unix, time_class='
     Returns:
     - list: The list of archived games between the two unix timestamps.
     """
+    if verbose:
+        print(f"Scanning games from {player_name} from {start_unix} to {end_unix}")
+
     monthly_archived_list = _getMonthlyArchivesList(player_name)
     monthly_archived_list = _filterOutArchiveListAfterUnixTimestamp(monthly_archived_list, end_unix)
     monthly_archived_list = _filterOutArchiveListBeforeUnixTimestamp(monthly_archived_list, start_unix)
@@ -310,6 +313,9 @@ def get_games_between_timestamps(player_name, start_unix, end_unix, time_class='
 
         for j in range(len(archived_games)):
             archived_game = archived_games[-(j+1)]
+            
+            if verbose:
+                print(archived_game['end_time'], archived_game['white']['username'], "v.s.", archived_game['black']['username'])
 
             unix_timestamp = archived_game['end_time']
             if unix_timestamp > end_unix or unix_timestamp < start_unix:
