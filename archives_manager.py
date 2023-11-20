@@ -283,7 +283,7 @@ def get_most_recent_games(player_name, num_games=100, time_class='rapid', filter
     else:
         return games_list
 
-def get_games_between_timestamps(player_name, start_unix, end_unix, time_class='rapid', filter_func=None, verbose=False, correct_elo=True):
+def get_games_between_timestamps(player_name, start_unix, end_unix, time_class='rapid', filter_func=None, verbose=False, correct_elo=True, max_games=None):
     """
     Retrieve a list of all of a player's archived games between two unix timestamps.
 
@@ -306,8 +306,12 @@ def get_games_between_timestamps(player_name, start_unix, end_unix, time_class='
     monthly_archived_list = _filterOutArchiveListBeforeUnixTimestamp(monthly_archived_list, start_unix)
 
     recent_archived_games = []
+    num_unfiltered = 0
 
     for i in range(len(monthly_archived_list)):
+        if max_games is not None and num_unfiltered == max_games:
+            break
+
         month_url = monthly_archived_list[-(i+1)]
         archived_games = _getArchivedGames(month_url)
 
@@ -330,6 +334,15 @@ def get_games_between_timestamps(player_name, start_unix, end_unix, time_class='
                 'game': archived_game,
                 'filtered': filtered
             })
+
+            if not filtered:
+                num_unfiltered += 1
+
+                if verbose:
+                    print(f'num unfiltered now: {num_unfiltered}')
+
+                if max_games is not None and num_unfiltered == max_games:
+                    break
     
     recent_archived_games = list(reversed(recent_archived_games))
 
