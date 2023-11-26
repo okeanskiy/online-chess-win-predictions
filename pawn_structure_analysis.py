@@ -153,7 +153,10 @@ class PawnStructureAnalysis:
         passed_pawns = 0
         for row in range(7):  # No need to check the last row
             for col in range(8):
-                r, c = row, col if color == chess.WHITE else self._from_black_perspective(row, col)
+                if color == chess.WHITE:
+                    r, c = row, col
+                else:
+                    r, c = self._from_black_perspective(row, col)
                 if B[r, c] == 1:
                     if (color == chess.WHITE and self._is_passed_pawn_white(r, c)) or (self._is_passed_pawn_black(r, c)):
                         passed_pawns += 1
