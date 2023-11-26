@@ -29,6 +29,10 @@ class PawnStructureAnalysis:
         self.board = board
         self.update()
 
+    def push_move(self, move):
+        self.board.push(move)
+        self.update()
+
     def update(self):
         self.Bw = self._board_to_matrix(chess.WHITE, chess.PAWN)
         self.Bb = self._board_to_matrix(chess.BLACK, chess.PAWN)
