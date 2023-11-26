@@ -76,6 +76,8 @@ class PawnStructureAnalysis:
             for c in range(8):
                 if B[r, c]:
                     col_list.append(c)
+        if len(col_list) == 0:
+            return 0, 0
         arr = np.array(col_list, dtype=np.float32)
         if color == chess.WHITE:
             arr = (arr - 3.5) / 3.5
@@ -92,6 +94,8 @@ class PawnStructureAnalysis:
             for c in range(8):
                 if B[r, c]:
                     row_list.append(r)
+        if len(row_list) == 0:
+            return 0, 0
         arr = np.array(row_list, dtype=np.float32)
         if color == chess.WHITE:
             arr = (arr - 1) / 6
@@ -134,7 +138,7 @@ class PawnStructureAnalysis:
 
     # passed pawns
     def _is_passed_pawn_white(self, row, col):
-        for r in range(row + 1, 8):
+        for r in range(row + 1, 7):
             for c in range(max(0, col - 1), min(8, col + 2)):
                 if self.Bb[r, c] == 1:
                     return False
@@ -151,14 +155,10 @@ class PawnStructureAnalysis:
         B = self._matrix_from_color(color)
 
         passed_pawns = 0
-        for row in range(7):  # No need to check the last row
-            for col in range(8):
-                if color == chess.WHITE:
-                    r, c = row, col
-                else:
-                    r, c = self._from_black_perspective(row, col)
+        for r in range(1, 7):  # No need to check the first or last row
+            for c in range(8):
                 if B[r, c] == 1:
-                    if (color == chess.WHITE and self._is_passed_pawn_white(r, c)) or (self._is_passed_pawn_black(r, c)):
+                    if (color == chess.WHITE and self._is_passed_pawn_white(r, c)) or (color == chess.BLACK and self._is_passed_pawn_black(r, c)):
                         passed_pawns += 1
 
         return passed_pawns
