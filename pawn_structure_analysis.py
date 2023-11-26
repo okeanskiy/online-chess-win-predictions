@@ -27,6 +27,9 @@ from chess import Board
 class PawnStructureAnalysis:
     def __init__(self, board):
         self.board = board
+        self.update()
+
+    def update(self):
         self.Bw = self._board_to_matrix(chess.WHITE, chess.PAWN)
         self.Bb = self._board_to_matrix(chess.BLACK, chess.PAWN)
 
